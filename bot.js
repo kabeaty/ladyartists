@@ -24,16 +24,17 @@ function getToken() {
 
 function getArtists() {
   api.newRequest()
-  .follow('artists')
+  .follow('artist')
   .withRequestOptions({
     headers: {
       'X-Xapp-Token': xappToken,
       'Accept': 'application/vnd.artsy-v2+json'
     }
   })
+  .withTemplateParameters({ id: 'kate-abercrombie' })
   .getResource(function(error, res) {
     console.log(error);
-    console.log(res.);
+    console.log(res);
   });
 }
 

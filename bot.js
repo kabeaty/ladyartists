@@ -1,6 +1,16 @@
 var request = require('request');
-// Twitter library
+
+// for Twitter
+var conf = require('./config.js');
+var Twitter = require('node-twitter');
+var twitterRestClient = new Twitter.RestClient(
+  conf.consumer_key,
+  conf.consumer_secret,
+  conf.access_token,
+  conf.access_token_secret
+);
 var Twit = require('twit');
+var T = new Twit(require('./config.js'));
 
 // for Artsy requests
 var request = require('superagent');
@@ -19,18 +29,15 @@ var artist_ids = [
   "michele-abeles",
   "jenny-abell",
   "gertrude-abercrombie",
-  "luciana-abait",
   "barbro-aberg",
   "etti-abergel",
   "inbal-abergil",
   "zarouhie-abdalian",
   "abigail-goldman",
   "sara-abdu",
-  "christine-aaron",
   "nina-chanel-abney",
   "angela-abbott",
-  "bernice-abbott"
-]
+];
 
 Array.prototype.pick = function() {
   return this[Math.floor(Math.random()*this.length)];
@@ -39,6 +46,7 @@ Array.prototype.pick = function() {
 // pick an artist to tweet about at random
 var artist_to_get = artist_ids.pick();
 var tweet_to_tweet;
+var twitter_image;
 
 function getToken() {
   request
@@ -63,16 +71,49 @@ function getArtistInfo() {
   .withTemplateParameters({ id: artist_to_get })
   .getResource(function(error, res) {
     if (res) {
+      console.log(res);
       if (res.name) {
         tweet_to_tweet = res.name;
-        tweet_to_tweet += ' is an artist';
+        tweet_to_tweet += ' is an artist.';
         console.log(tweet_to_tweet);
       }
+      if (res.nationality) {
+        tweet_to_tweet += ' She is ';
+        tweet_to_tweet += res.nationality;
+        tweet_to_tweet += '.';
+      }
+      if (res._links.permalink.href) {
+        tweet_to_tweet += ' ' + res._links.permalink.href;
+      }
+      if (res._links.thumbnail.href) {
+        if (res._links.thumbnail.href == '/assets/shared/missing_image.png') {
+          twitter_image = undefined;
+        } else {
+          twitter_image = res._links.thumbnail.href;
+        }
+      }
     }
+    tweet_it_out(tweet_to_tweet, twitter_image);
   });
 }
 
-getToken();
+function tweet_it_out(tweet_to_tweet, twitter_image) {
+  console.log(tweet_to_tweet, twitter_image);
+  // if (twitter_image) {
+  //   twitterRestClient.statusesUpdateWithMedia({
+  //     'status': tweet_to_tweet,
+  //     'media[]': twitter_image.toString()
+  //   });
+  // } else {
+    T.post('statuses/update', { status: tweet_to_tweet }, function(err, reply) {
+        if (err) {
+          console.log('error:', err);
+        }
+        else {
+          console.log('reply:', reply);
+        }
+      });
+  // }
+}
 
-// Include config file
-var T = new Twit(require('./config.js'));
+getToken();
